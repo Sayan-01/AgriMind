@@ -5,7 +5,8 @@
     "setup-db": "docker compose -f infra/compose.yml up -d",
     "dev": "turbo run dev --parallel",
     "build": "turbo run build",
-    "lint": "turbo run lint"
+    "lint": "turbo run lint",
+    "detect-disease": "cd apps/ml-inference && /Users/souvik/Desktop/AgriMind/.venv/bin/python detect.py"
   },
   "devDependencies": {
     "prettier": "^3.6.2",
