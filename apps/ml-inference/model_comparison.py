@@ -10,9 +10,9 @@ import json
 from typing import Dict, List
 import pandas as pd
 
-# Import both predictors
-from simple_predictor import SimplePredictor
+# Import all predictors
 from huggingface_predictor import HuggingFacePredictor
+from local_predictor import LocalModelPredictor
 
 def compare_predictions(image_paths: List[str], output_file: str = None) -> pd.DataFrame:
     """
@@ -29,11 +29,15 @@ def compare_predictions(image_paths: List[str], output_file: str = None) -> pd.D
     
     # Initialize predictors
     try:
-        simple_pred = SimplePredictor()
-        print("✅ Simple predictor loaded")
+        local_pred = LocalModelPredictor()
+        if local_pred.is_available():
+            print("✅ Local predictor loaded")
+        else:
+            print("📭 No local models available")
+            local_pred = None
     except Exception as e:
-        print(f"❌ Error loading simple predictor: {e}")
-        simple_pred = None
+        print(f"❌ Error loading local predictor: {e}")
+        local_pred = None
     
     try:
         hf_pred = HuggingFacePredictor()
@@ -56,29 +60,30 @@ def compare_predictions(image_paths: List[str], output_file: str = None) -> pd.D
             'image_path': img_path
         }
         
-        # Test simple predictor
-        if simple_pred:
+        # Test local predictor
+        if local_pred:
             try:
                 start_time = time.time()
-                simple_result = simple_pred.predict(img_path)
-                simple_time = time.time() - start_time
+                local_result = local_pred.infer(img_path)
+                local_time = time.time() - start_time
                 
                 result.update({
-                    'simple_prediction': simple_result['predicted_class'],
-                    'simple_confidence': simple_result['confidence'],
-                    'simple_time': simple_time
+                    'local_prediction': local_result['label'],
+                    'local_confidence': local_result['confidence'],
+                    'local_time': local_time
                 })
                 
-                print(f"   🔹 Simple Model: {simple_result['predicted_class']} ({simple_result['confidence']:.1%})")
+                model_name = local_result['model_info']['model_name']
+                print(f"   🏠 Local Model ({model_name}): {local_result['label']} ({local_result['confidence']:.1%})")
                 
             except Exception as e:
                 result.update({
-                    'simple_prediction': 'Error',
-                    'simple_confidence': 0.0,
-                    'simple_time': 0.0,
-                    'simple_error': str(e)
+                    'local_prediction': 'Error',
+                    'local_confidence': 0.0,
+                    'local_time': 0.0,
+                    'local_error': str(e)
                 })
-                print(f"   ❌ Simple Model Error: {e}")
+                print(f"   ❌ Local Model Error: {e}")
         
         # Test HuggingFace predictor
         if hf_pred:
@@ -105,14 +110,24 @@ def compare_predictions(image_paths: List[str], output_file: str = None) -> pd.D
                 print(f"   ❌ HuggingFace Error: {e}")
         
         # Compare predictions
-        if 'simple_prediction' in result and 'hf_prediction' in result:
-            same_prediction = result['simple_prediction'].lower() == result['hf_prediction'].lower()
+        if 'local_prediction' in result and 'hf_prediction' in result:
+            same_prediction = result['local_prediction'].lower() == result['hf_prediction'].lower()
             result['predictions_match'] = same_prediction
             
             if same_prediction:
                 print(f"   ✅ Both models agree!")
             else:
                 print(f"   🔄 Different predictions")
+                
+        # Show performance comparison
+        if 'local_time' in result and 'hf_time' in result:
+            if result['local_time'] < result['hf_time']:
+                faster_model = "Local"
+                time_diff = result['hf_time'] - result['local_time']
+            else:
+                faster_model = "HuggingFace"
+                time_diff = result['local_time'] - result['hf_time']
+            print(f"   ⚡ {faster_model} model is {time_diff:.2f}s faster")
         
         results.append(result)
     
@@ -139,41 +154,43 @@ def print_comparison_summary(df: pd.DataFrame):
     total_images = len(df)
     print(f"📷 Total images tested: {total_images}")
     
-    if 'simple_prediction' in df.columns and 'hf_prediction' in df.columns:
+    if 'local_prediction' in df.columns and 'hf_prediction' in df.columns:
         # Agreement rate
         agreement_rate = df['predictions_match'].sum() / total_images * 100
         print(f"🤝 Agreement rate: {agreement_rate:.1f}%")
         
         # Performance comparison
-        if 'simple_time' in df.columns and 'hf_time' in df.columns:
-            avg_simple_time = df['simple_time'].mean()
+        if 'local_time' in df.columns and 'hf_time' in df.columns:
+            avg_local_time = df['local_time'].mean()
             avg_hf_time = df['hf_time'].mean()
             
             print(f"⏱️ Average inference time:")
-            print(f"   Simple Model: {avg_simple_time:.3f}s")
+            print(f"   Local Model:  {avg_local_time:.3f}s")
             print(f"   HuggingFace:  {avg_hf_time:.3f}s")
             
-            if avg_simple_time > 0:
-                speedup = avg_simple_time / avg_hf_time if avg_hf_time > 0 else float('inf')
-                faster_model = "HuggingFace" if speedup > 1 else "Simple"
+            if avg_local_time > 0 and avg_hf_time > 0:
+                speedup = avg_hf_time / avg_local_time
+                faster_model = "Local" if speedup > 1 else "HuggingFace"
                 print(f"   🏃 {faster_model} is {abs(speedup):.1f}x faster")
         
         # Confidence comparison
-        if 'simple_confidence' in df.columns and 'hf_confidence' in df.columns:
-            avg_simple_conf = df['simple_confidence'].mean()
+        if 'local_confidence' in df.columns and 'hf_confidence' in df.columns:
+            avg_local_conf = df['local_confidence'].mean()
             avg_hf_conf = df['hf_confidence'].mean()
             
             print(f"📊 Average confidence:")
-            print(f"   Simple Model: {avg_simple_conf:.1%}")
+            print(f"   Local Model:  {avg_local_conf:.1%}")
             print(f"   HuggingFace:  {avg_hf_conf:.1%}")
-        
-        # Show unique predictions
-        print(f"\n🔹 Simple Model unique predictions:")
-        simple_preds = df['simple_prediction'].value_counts().head(10)
-        for pred, count in simple_preds.items():
+    
+    # Show unique predictions for each available model
+    if 'local_prediction' in df.columns:
+        print(f"\n🏠 Local Model unique predictions:")
+        local_preds = df['local_prediction'].value_counts().head(10)
+        for pred, count in local_preds.items():
             percentage = count / total_images * 100
             print(f"   {pred}: {count} ({percentage:.1f}%)")
-        
+    
+    if 'hf_prediction' in df.columns:        
         print(f"\n🤗 HuggingFace unique predictions:")
         hf_preds = df['hf_prediction'].value_counts().head(10)
         for pred, count in hf_preds.items():

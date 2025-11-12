@@ -1,15 +1,16 @@
 """
-Updated Plant Disease Predictor
-Drop-in replacement using Hugging Face model
+Smart Plant Disease Predictor
+Uses local trained models when available, falls back to Hugging Face model
 """
 
 from huggingface_predictor import HuggingFacePredictor
+from local_predictor import LocalModelPredictor
 import argparse
 from pathlib import Path
 
 def predict_disease(image_path: str, top_k: int = 3):
     """
-    Main prediction function - drop-in replacement for the old predictor
+    Smart prediction function - uses local model if available, otherwise Hugging Face
     
     Args:
         image_path: Path to the image file
@@ -18,23 +19,41 @@ def predict_disease(image_path: str, top_k: int = 3):
     Returns:
         Dictionary with prediction results
     """
-    # Initialize the HuggingFace predictor
-    predictor = HuggingFacePredictor()
+    # Try local model first
+    local_predictor = LocalModelPredictor()
     
-    # Get prediction
-    result = predictor.infer(image_path)
-    
-    # Format result to match the old predictor interface
-    formatted_result = {
-        'predicted_class': result['label'],
-        'confidence': result['confidence'],
-        'top_predictions': [{
-            'class': result['label'],
-            'confidence': result['confidence']
-        }],
-        'model_type': 'HuggingFace_ViT',
-        'image_path': image_path
-    }
+    if local_predictor.is_available():
+        print("🏠 Using local trained model...")
+        result = local_predictor.infer(image_path, top_k)
+        
+        # Format result to match the old predictor interface
+        formatted_result = {
+            'predicted_class': result['label'],
+            'confidence': result['confidence'],
+            'top_predictions': result['top_predictions'],
+            'model_type': f"Local_{result['model_info']['architecture']}",
+            'model_name': result['model_info']['model_name'],
+            'training_accuracy': result['model_info']['training_accuracy'],
+            'image_path': image_path
+        }
+        
+    else:
+        print("🌐 Using Hugging Face model...")
+        # Fallback to HuggingFace predictor
+        hf_predictor = HuggingFacePredictor()
+        result = hf_predictor.infer(image_path)
+        
+        # Format result to match the old predictor interface
+        formatted_result = {
+            'predicted_class': result['label'],
+            'confidence': result['confidence'],
+            'top_predictions': [{
+                'class': result['label'],
+                'confidence': result['confidence']
+            }],
+            'model_type': 'HuggingFace_ViT',
+            'image_path': image_path
+        }
     
     return formatted_result
 
@@ -54,6 +73,17 @@ def main():
         print(f"🎯 Predicted Disease: {result['predicted_class']}")
         print(f"📊 Confidence: {result['confidence']:.1%}")
         print(f"🤖 Model: {result['model_type']}")
+        
+        # Show additional model info for local models
+        if 'Local' in result['model_type']:
+            print(f"📝 Model Name: {result.get('model_name', 'N/A')}")
+            print(f"🎯 Training Accuracy: {result.get('training_accuracy', 0):.1%}")
+        
+        # Show top predictions if available
+        if len(result['top_predictions']) > 1:
+            print(f"\n📋 Top {len(result['top_predictions'])} Predictions:")
+            for i, pred in enumerate(result['top_predictions'], 1):
+                print(f"   {i}. {pred['class']}: {pred['confidence']:.1%}")
         
         # Additional disease information
         disease = result['predicted_class']

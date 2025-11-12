@@ -6,7 +6,8 @@
     "dev": "turbo run dev --parallel",
     "build": "turbo run build",
     "lint": "turbo run lint",
-    "detect-disease": "cd apps/ml-inference && /Users/souvik/Desktop/AgriMind/.venv/bin/python detect.py"
+    "detect-disease": "cd apps/ml-inference && /Users/souvik/Desktop/AgriMind/.venv/bin/python detect.py",
+    "ask-agrimind": "cd apps/rag-script && /Users/souvik/Desktop/AgriMind/.venv/bin/python cli.py"
   },
   "devDependencies": {
     "prettier": "^3.6.2",
