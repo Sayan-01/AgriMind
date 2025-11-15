@@ -1,0 +1,59 @@
+@echo off
+echo 🌾 Setting up AgriMind...
+
+REM Check if virtual environment exists, create if not
+if not exist ".venv" (
+    echo 📦 Creating Python virtual environment...
+    python -m venv .venv
+)
+
+REM Activate virtual environment
+echo 🔄 Activating virtual environment...
+call .venv\Scripts\activate.bat
+
+REM Install Python dependencies
+echo 🐍 Installing Python dependencies...
+pip install -r apps/api/requirements.txt
+pip install -r apps/rag-script/requirements.txt
+pip install -r apps/ml-inference/requirements.txt
+pip install -r packages/kb/requirements.txt
+
+REM Install Node.js dependencies
+echo 📦 Installing Node.js dependencies...
+pnpm install
+
+REM Setup environment files
+echo ⚙️ Setting up environment files...
+if not exist "apps\api\.env" (
+    copy "apps\api\.env.example" "apps\api\.env"
+    echo 📝 Created apps/api/.env from template
+)
+
+if not exist "apps\rag-script\.env" (
+    copy "apps\rag-script\.env.example" "apps\rag-script\.env"
+    echo 📝 Created apps/rag-script/.env from template
+)
+
+REM Start Docker services
+echo 🐳 Starting Docker services...
+docker compose -f infra/compose.yml up -d
+
+REM Wait for database to be ready
+echo ⏳ Waiting for database to be ready...
+timeout /t 10 /nobreak > nul
+
+REM Setup RAG system
+echo 🧠 Setting up RAG system...
+cd apps/rag-script
+python setup_db.py
+python load_knowledge_base.py
+cd ..\..
+
+echo ✅ Setup complete!
+echo.
+echo 🔑 IMPORTANT: Set your Gemini API key in apps/rag-script/.env
+echo    Get your API key from: https://makersuite.google.com/app/apikey
+echo    Edit the file and replace 'your_gemini_api_key_here' with your actual key
+echo.
+echo 🚀 Run 'pnpm dev' to start the application
+echo 🌐 Open http://localhost:3000 in your browser

@@ -14,22 +14,46 @@ An AI-powered agricultural assistance platform combining plant disease detection
 
 ## 🚀 Quick Start
 
-### Full Application (Frontend + Backend)
+```bash
+# Clone the repository
+git clone <repository-url>
+cd AgriMind
 
-1. **Setup Database & Services**:
+# One-command setup (creates venv, installs dependencies, starts Docker)
+pnpm setup        # macOS/Linux
+# OR
+pnpm setup:windows  # Windows
+
+# Start the application
+pnpm dev
+```
+
+Open `http://localhost:3000` in your browser and start analyzing your crops!
+
+## 🔑 Environment Setup
+
+**Important**: You need a Gemini API key for the AI assistant to work properly.
+
+1. **Get your Gemini API key**:
+   - Go to [Google AI Studio](https://makersuite.google.com/app/apikey)
+   - Create a new API key (free tier available)
+
+2. **Set your API key**:
 
    ```bash
-   pnpm setup-db
+   # Edit the environment file
+   nano apps/rag-script/.env
+
+   # Replace this line:
+   GEMINI_API_KEY=your_gemini_api_key_here
+
+   # With your actual key:
+   GEMINI_API_KEY=your_actual_api_key_here
    ```
 
-2. **Start the Complete Application**:
-
-   ```bash
-   pnpm dev
-   ```
-
-3. **Open Your Browser**:
-   Navigate to `http://localhost:3000` and start analyzing your crops!
+3. **Optional configurations**:
+   - `apps/api/.env` - API server settings (defaults work fine)
+   - `apps/rag-script/.env` - RAG system settings (defaults work fine)
 
 ### Plant Disease Detection
 
@@ -73,53 +97,42 @@ npm run ask-agrimind -- --query "Farming practices in Murshidabad" --region "Mur
 
 ## 📋 Requirements
 
-- **Python 3.8+** with virtual environment
+- **Python 3.8+**
 - **Node.js 18+** and pnpm
-- **Docker** (for database services)
-- **PostgreSQL with pgvector** (auto-setup via Docker)
+- **Docker**
 
-## ⚙️ Setup
+That's it! The setup script handles everything else.
 
-1. **Clone and setup environment**:
+## 🔧 Manual Setup (if needed)
+
+If you prefer manual setup or encounter issues:
+
+1. **Create Python virtual environment**:
 
    ```bash
-   git clone <repository-url>
-   cd AgriMind
-   python -m venv .venv
+   python3 -m venv .venv
    source .venv/bin/activate  # On Windows: .venv\Scripts\activate
    ```
 
-2. **Install dependencies**:
+2. **Install all dependencies**:
 
    ```bash
    pnpm install
-   pip install -r apps/ml-inference/requirements.txt
+   pip install -r apps/api/requirements.txt
    pip install -r apps/rag-script/requirements.txt
+   pip install -r apps/ml-inference/requirements.txt
+   pip install -r packages/kb/requirements.txt
    ```
 
-3. **Setup database services**:
+3. **Start Docker services**:
 
    ```bash
-   npm run setup-db
+   docker compose -f infra/compose.yml up -d
    ```
 
-4. **Initialize RAG system** (one-time setup):
-
+4. **Initialize RAG system**:
    ```bash
-   cd apps/rag-script
-   python setup_db.py
-   python load_knowledge_base.py
-   cd ../..
-   ```
-
-5. **Test the systems**:
-
-   ```bash
-   # Test disease detection
-   npm run detect-disease apps/ml-inference/sample_image.jpg
-
-   # Test RAG system
-   npm run ask-agrimind -- --query "Hello, what can you help me with?"
+   cd apps/rag-script && python setup_db.py && python load_knowledge_base.py && cd ../..
    ```
 
 ## 🏗️ Architecture
@@ -139,21 +152,33 @@ AgriMind/
     └── compose.yml       # Docker services
 ```
 
+## 🧪 Test Your Setup
+
+```bash
+# Check if environment variables are set correctly
+pnpm check-env
+
+# Test disease detection
+npm run detect-disease apps/ml-inference/test_leaf.jpg
+
+# Test RAG system (requires Gemini API key)
+npm run ask-agrimind -- --query "What crops are good for West Bengal?"
+
+# Check system health
+npm run ask-agrimind -- --health-check
+```
+
 ## 🔧 Development
 
 ```bash
 # Start all services in development mode
-npm run dev
+pnpm dev
 
 # Run linting across all packages
-npm run lint
+pnpm lint
 
 # Build all packages
-npm run build
-
-# Check system health
-npm run ask-agrimind -- --health-check
-npm run ask-agrimind -- --stats
+pnpm build
 ```
 
 ## 📖 Documentation
@@ -162,19 +187,3 @@ npm run ask-agrimind -- --stats
 - [RAG System](./apps/rag-script/README.md) - Knowledge retrieval system guide
 - [Knowledge Base Processing](./packages/kb/README.md) - Data processing pipeline
 - [Frontend](./apps/frontend/README.md) - Web interface documentation
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests and documentation
-5. Submit a pull request
-
-## 📄 License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
----
-
-**AgriMind** - Empowering farmers with AI-driven insights for better agricultural outcomes.
