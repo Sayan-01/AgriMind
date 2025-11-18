@@ -14,6 +14,33 @@ An AI-powered agricultural assistance platform combining plant disease detection
 
 ## 🚀 Quick Start
 
+### Option 1: Docker Compose (Recommended)
+
+The easiest way to run AgriMind with all dependencies:
+
+```bash
+# Clone the repository
+git clone <repository-url>
+cd AgriMind
+
+# Start everything with one command (includes databases!)
+./start-agrimind.sh    # macOS/Linux
+# OR
+start-agrimind.bat     # Windows
+
+# Or manually with docker-compose
+docker-compose up --build
+```
+
+This will start:
+
+- PostgreSQL database with pgvector extension
+- Redis for caching
+- AgriMind API server
+- All services accessible at localhost
+
+### Option 2: Development Setup
+
 ```bash
 # Clone the repository
 git clone <repository-url>
@@ -126,11 +153,20 @@ If you prefer manual setup or encounter issues:
 
 3. **Start Docker services**:
 
+   **Option A: Complete Stack (Recommended)**
+
+   ```bash
+   # Start everything including databases
+   docker-compose up --build
+   ```
+
+   **Option B: Infrastructure Only**
+
    ```bash
    docker compose -f infra/compose.yml up -d
    ```
 
-4. **Initialize RAG system**:
+4. **Initialize RAG system** (if using Option B):
    ```bash
    cd apps/rag-script && python setup_db.py && python load_knowledge_base.py && cd ../..
    ```
@@ -168,7 +204,54 @@ npm run ask-agrimind -- --query "What crops are good for West Bengal?"
 npm run ask-agrimind -- --health-check
 ```
 
-## 🔧 Development
+## � Docker Setup
+
+AgriMind includes a complete Docker setup with databases for easy deployment:
+
+### Quick Start with Docker
+
+```bash
+# Start the complete stack (recommended)
+./start-agrimind.sh    # macOS/Linux
+start-agrimind.bat     # Windows
+
+# Or manually
+docker-compose up --build
+```
+
+### Services Included
+
+- **PostgreSQL**: Database with pgvector extension for embeddings
+- **Redis**: Caching and session management
+- **AgriMind API**: Complete backend with all services
+
+### Access Points
+
+- API Server: http://localhost:8000
+- API Documentation: http://localhost:8000/docs
+- Health Check: http://localhost:8000/health
+- Database: localhost:5432 (user: agrimind, password: agrimind)
+- Redis: localhost:6379
+
+### Docker Commands
+
+```bash
+# Start services
+docker-compose up --build
+
+# View logs
+docker-compose logs -f api
+
+# Stop services
+docker-compose down
+
+# Rebuild specific service
+docker-compose build api && docker-compose up -d api
+```
+
+For detailed Docker setup information, see [DOCKER_SETUP.md](DOCKER_SETUP.md).
+
+## �🔧 Development
 
 ```bash
 # Start all services in development mode

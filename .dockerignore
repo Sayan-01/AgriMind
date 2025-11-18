@@ -1,0 +1,170 @@
+# Git
+.git
+.gitignore
+.gitattributes
+.github/
+
+# CI/CD
+.gitlab-ci.yml
+.travis.yml
+.circleci/
+.github/
+*.yml
+*.yaml
+turbo.json
+
+# Documentation
+README.md
+*.md
+docs/
+*.txt
+CHANGELOG*
+LICENSE*
+
+# IDE and Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.sublime-*
+.editorconfig
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.coverage
+.coverage.*
+.cache
+.pytest_cache/
+nosetests.xml
+coverage.xml
+*.cover
+*.log
+.mypy_cache/
+.hypothesis/
+.dmypy.json
+dmypy.json
+
+# Node.js and Frontend
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+.yarn/
+.next/
+.nuxt/
+dist/
+build/
+out/
+
+# Package manager lock files (keep pnpm-lock.yaml for monorepo)
+package-lock.json
+yarn.lock
+
+# Environment files (will be handled separately)
+.env*
+!.env.example
+.envrc
+
+# Test files and test data
+test/
+tests/
+__tests__/
+*.test.js
+*.test.py
+*.spec.js
+*.spec.py
+test_*.py
+*_test.py
+.nyc_output
+coverage/
+
+# Development tools
+.eslintrc*
+.prettierrc*
+.babelrc*
+jest.config.*
+cypress.json
+playwright.config.*
+vitest.config.*
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Docker files (avoid recursive copying)
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# Temporary files
+tmp/
+temp/
+.tmp/
+*.tmp
+
+# Scripts and utilities not needed in production
+scripts/
+*.sh
+*.bat
+setup.*
+demo_*.py
+final_*.py
+test_*.py
+batch_test.sh
+
+# Development data and models (can be large)
+data/raw/
+data/processed/
+models/checkpoints/
+models/experiments/
+*.pkl
+*.joblib
+*.h5
+*.hdf5
+*.onnx
+wandb/
+tensorboard_logs/
+
+# IDE specific
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Infra files
+infra/
+compose.yml
+
+# Package manager lock files (not the packages directory itself)
+package-lock.json
+yarn.lock
+pnpm-lock.yaml

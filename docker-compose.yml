@@ -1,0 +1,103 @@
+services:
+  # PostgreSQL with pgvector extension for vector operations
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: agrimind-db
+    environment:
+      POSTGRES_USER: agrimind
+      POSTGRES_PASSWORD: agrimind
+      POSTGRES_DB: agrimind
+    ports:
+      - "5432:5432"
+    volumes:
+      - dbdata:/var/lib/postgresql/data
+      - ./init-db:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U agrimind -d agrimind"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+  # Redis for caching and session management
+  redis:
+    image: redis:7-alpine
+    container_name: agrimind-redis
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--save", "900 1", "--loglevel", "warning"]
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  # Main AgriMind API server
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: agrimind-api
+    ports:
+      - "8000:8000"
+    environment:
+      # Database configuration
+      - DATABASE_URL=postgresql://agrimind:agrimind@db:5432/agrimind
+      - POSTGRES_HOST=db
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=agrimind
+      - POSTGRES_PASSWORD=agrimind
+      - POSTGRES_DB=agrimind
+
+      # Redis configuration
+      - REDIS_URL=redis://redis:6379/0
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+
+      # Application configuration
+      - ENVIRONMENT=production
+      - API_PORT=8000
+      - LOG_LEVEL=INFO
+
+      # ML and AI model paths
+      - MODEL_PATH=/app/models
+      - DATA_PATH=/app/data
+
+      # Security
+      - JWT_SECRET_KEY=your-secret-key-change-in-production
+      - CORS_ORIGINS=http://localhost:3000,http://localhost:8080
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./data:/app/data
+      - ./models:/app/models
+      - uploads:/app/uploads
+      - logs:/app/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+
+volumes:
+  dbdata:
+    driver: local
+  redisdata:
+    driver: local
+  uploads:
+    driver: local
+  logs:
+    driver: local
+
+networks:
+  default:
+    name: agrimind-network
+    driver: bridge

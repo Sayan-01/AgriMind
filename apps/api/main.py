@@ -235,6 +235,11 @@ async def status_check():
         }
     )
 
+@app.get("/health")
+async def simple_health_check():
+    """Simple health check endpoint for Docker"""
+    return {"status": "ok"}
+
 @app.post("/api/rag", response_model=RAGResponse)
 async def rag_query(query_data: RAGQuery):
     """
